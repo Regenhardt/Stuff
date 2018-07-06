@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Regenhardt
 {
@@ -7,21 +9,17 @@ namespace Regenhardt
 	{
 		static void Main(string[] args)
 		{
-
-			var runner = new MultiProcessRunner();
-
-			object mutex = new object();
-			Monitor.Enter(mutex);
-
-			runner.AddPocess("cmd.exe", () => Monitor.Exit(mutex));
-			Console.WriteLine("Now waiting");
-
-			lock (mutex)
+			using (var runner = new MultiProcessRunner())
 			{
-				Console.WriteLine("Other process exited.");
-			}
+				var task = new Task(() => { });
+				runner.AddPocess("cmd.exe", task, true);
+				Console.WriteLine("Now waiting");
 
-			Console.ReadKey();
+				task.Wait();
+				Console.WriteLine("Other process exited.");
+
+				Console.ReadKey();
+			}
 		}
 	}
 }

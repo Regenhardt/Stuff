@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Regenhardt
 {
@@ -9,7 +10,7 @@ namespace Regenhardt
 	{
 		#region [ Fields ]
 
-		private Dictionary<Process, Action> processes; 
+		private Dictionary<Process, Task> processes; 
 
 		#endregion
 
@@ -37,7 +38,7 @@ namespace Regenhardt
 		public MultiProcessRunner(bool autoClean = true)
 		{
 			AutoClean = autoClean;
-			processes = new Dictionary<Process, Action>();
+			processes = new Dictionary<Process, Task>();
 		}
 
 		#endregion
@@ -50,17 +51,26 @@ namespace Regenhardt
 		/// <param name="path">The application to execute.</param>
 		/// <param name="runAsAdmin">Whether to run the process with elevated rights. This requires elevated rights or will trigger UAC.</param>
 		/// <returns>Whether or not the process was successfully started.</returns>
-		public bool AddPocess(string path, Action onExitHandler = null, bool runAsAdmin = false)
+		public bool AddPocess(string path, Task onExitHandler = null, bool withWindow = true, bool runAsAdmin = false)
 		{
 			try
 			{
-				var p = new Process();
-				p.StartInfo = new ProcessStartInfo(path);
-				if (runAsAdmin)
-					p.StartInfo.Verb = "runas";
+				var p = new Process
+				{
+					StartInfo = new ProcessStartInfo(path)
+					{
+						CreateNoWindow = !withWindow,
+						WindowStyle = withWindow ? ProcessWindowStyle.Normal : ProcessWindowStyle.Hidden,
+						Verb = runAsAdmin ? "runas" : "",
+						UseShellExecute = true
+					},
+					EnableRaisingEvents = true
+				};
+
 				p.Exited += OnProcessExited;
 				if (p.Start())
 				{
+					Console.WriteLine(p.ProcessName+" started");
 					processes.Add(p, onExitHandler);
 					return true;
 				}
@@ -125,7 +135,7 @@ namespace Regenhardt
 			if(sender is Process p &&
 				AutoClean)
 			{
-				processes[p]?.BeginInvoke(null, null);
+				processes[p]?.Start();
 				processes.Remove(p);
 			}
 		}
