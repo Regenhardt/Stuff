@@ -10,7 +10,7 @@ namespace Regenhardt
 	{
 		#region [ Fields ]
 
-		private Dictionary<Process, Task> processes; 
+		private readonly Dictionary<Process, Task> processes; 
 
 		#endregion
 
@@ -24,7 +24,7 @@ namespace Regenhardt
 		/// <summary>
 		/// Count of active, stored processes.
 		/// </summary>
-		public int ActiveProcesses => processes.Where(p => !p.Key.HasExited).Count();
+		public int ActiveProcesses => processes.Count(p => !p.Key.HasExited);
 
 		/// <summary>
 		/// Whether or not to automatically remove processes from the list when they exit.
@@ -49,7 +49,9 @@ namespace Regenhardt
 		/// Starts a new process.
 		/// </summary>
 		/// <param name="path">The application to execute.</param>
+		/// <param name="withWindow">Whether or not to start the process in its own window.</param>
 		/// <param name="runAsAdmin">Whether to run the process with elevated rights. This requires elevated rights or will trigger UAC.</param>
+		/// <param name="onExitHandler"></param>
 		/// <returns>Whether or not the process was successfully started.</returns>
 		public bool AddPocess(string path, Task onExitHandler = null, bool withWindow = true, bool runAsAdmin = false)
 		{
@@ -62,7 +64,7 @@ namespace Regenhardt
 						CreateNoWindow = !withWindow,
 						WindowStyle = withWindow ? ProcessWindowStyle.Normal : ProcessWindowStyle.Hidden,
 						Verb = runAsAdmin ? "runas" : "",
-						UseShellExecute = true
+						UseShellExecute = withWindow
 					},
 					EnableRaisingEvents = true
 				};
